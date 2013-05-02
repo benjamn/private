@@ -125,7 +125,7 @@ Yes it can!
 var getPrivates = require("private").makeAccessor();
 
 function Node() {
-    var children = [];
+    getPrivates(this).children = [];
 }
 
 var Np = Node.prototype;
@@ -135,7 +135,7 @@ Np.getParent = function() {
 };
 
 Np.appendChild = function(child) {
-    children.push(child);
+    getPrivates(this).children.push(child);
     var cps = getPrivates(child);
     if (cps.parent)
         cps.parent.removeChild(child);
@@ -155,9 +155,8 @@ Immediately-Invoked Function Expression:
 var Node = (function() {
     var getPrivates = require("private").makeAccessor();
 
-    function Node(parent) {
-        var children = [];
-        getPrivates(this).parent = parent;
+    function Node() {
+        getPrivates(this).children = [];
     }
 
     var Np = Node.prototype;
@@ -167,7 +166,7 @@ var Node = (function() {
     };
 
     Np.appendChild = function(child) {
-        children.push(child);
+        getPrivates(this).children.push(child);
         var cps = getPrivates(child);
         if (cps.parent)
             cps.parent.removeChild(child);
