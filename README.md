@@ -94,10 +94,10 @@ Usage
 
 Let's revisit the `Node` example from above:
 ```js
-var getPrivates = require("private").makeAccessor();
+var p = require("private").makeAccessor();
 
 function Node() {
-    var privates = getPrivates(this);
+    var privates = p(this);
     var children = [];
 
     this.getParent = function() {
@@ -106,71 +106,71 @@ function Node() {
 
     this.appendChild = function(child) {
         children.push(child);
-        var cps = getPrivates(child);
-        if (cps.parent)
-            cps.parent.removeChild(child);
-        cps.parent = this;
+        var cp = p(child);
+        if (cp.parent)
+            cp.parent.removeChild(child);
+        cp.parent = this;
         return child;
     };
 }
 ```
 Now, in order to access the private data of a `Node` object, you need to
-have access to the unique `getPrivates` function that is being used here.
-This is already an improvement over the previous example, because it
-allows restricted access by other `Node` instances, but can it help with
-the `Node.prototype` problem too?
+have access to the unique `p` function that is being used here.  This is
+already an improvement over the previous example, because it allows
+restricted access by other `Node` instances, but can it help with the
+`Node.prototype` problem too?
 
 Yes it can!
 ```js
-var getPrivates = require("private").makeAccessor();
+var p = require("private").makeAccessor();
 
 function Node() {
-    getPrivates(this).children = [];
+    p(this).children = [];
 }
 
 var Np = Node.prototype;
 
 Np.getParent = function() {
-    return getPrivates(this).parent;
+    return p(this).parent;
 };
 
 Np.appendChild = function(child) {
-    getPrivates(this).children.push(child);
-    var cps = getPrivates(child);
-    if (cps.parent)
-        cps.parent.removeChild(child);
-    cps.parent = this;
+    p(this).children.push(child);
+    var cp = p(child);
+    if (cp.parent)
+        cp.parent.removeChild(child);
+    cp.parent = this;
     return child;
 };
 ```
-Because `getPrivates` is in scope not only within the `Node` constructor
-but also within `Node` methods, we can finally avoid redefining methods
-every time the `Node` constructor is called.
+Because `p` is in scope not only within the `Node` constructor but also
+within `Node` methods, we can finally avoid redefining methods every time
+the `Node` constructor is called.
 
-Now, you might be wondering how you can restrict access to `getPrivates`
-so that no untrusted code is able to call it. The answer is to use your
-favorite module pattern, be it CommonJS, AMD `define`, or even the old
+Now, you might be wondering how you can restrict access to `p` so that no
+untrusted code is able to call it. The answer is to use your favorite
+module pattern, be it CommonJS, AMD `define`, or even the old
 Immediately-Invoked Function Expression:
 ```js
 var Node = (function() {
-    var getPrivates = require("private").makeAccessor();
+    var p = require("private").makeAccessor();
 
     function Node() {
-        getPrivates(this).children = [];
+        p(this).children = [];
     }
 
     var Np = Node.prototype;
 
     Np.getParent = function() {
-        return getPrivates(this).parent;
+        return p(this).parent;
     };
 
     Np.appendChild = function(child) {
-        getPrivates(this).children.push(child);
-        var cps = getPrivates(child);
-        if (cps.parent)
-            cps.parent.removeChild(child);
-        cps.parent = this;
+        p(this).children.push(child);
+        var cp = p(child);
+        if (cp.parent)
+            cp.parent.removeChild(child);
+        cp.parent = this;
         return child;
     };
 
@@ -182,8 +182,8 @@ var child = new Node;
 parent.appendChild(child);
 assert.strictEqual(child.getParent(), parent);
 ```
-Because this version of `getPrivates` never leaks from the enclosing
-function scope, only `Node` objects have access to it.
+Because this version of `p` never leaks from the enclosing function scope,
+only `Node` objects have access to it.
 
 So, you see, the claim I made at the beginning of this README remains
 true:
