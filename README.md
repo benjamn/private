@@ -1,3 +1,8 @@
+private [![Build Status](https://travis-ci.org/benjamn/private.png?branch=master)](https://travis-ci.org/benjamn/private)
+===
+
+A general-purpose utility for associating truly private state with any JavaScript object.
+
 Installation
 ---
 
