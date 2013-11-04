@@ -60,19 +60,16 @@ function makeAccessor() {
     function register(object) {
         var key = makeUniqueKey();
         defProp(object, brand, { value: key });
-        secrets[key] = {
-            object: object,
-            value: create(null)
-        };
+        secrets[key] = create(null);
     }
 
     return function(object) {
         if (!hasOwn.call(object, brand))
             register(object);
 
-        var secret = secrets[object[brand]];
-        if (secret.object === object)
-            return secret.value;
+        var key = object[brand];
+        if (hasOwn.call(secrets, key))
+            return secrets[key];
     };
 }
 
