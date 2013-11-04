@@ -54,11 +54,11 @@ defProp(exports, "makeUniqueKey", {
 });
 
 function makeAccessor() {
-    var secrets = [];
+    var secrets = {};
     var brand = makeUniqueKey();
 
     function register(object) {
-        var key = secrets.length;
+        var key = makeUniqueKey();
         defProp(object, brand, { value: key });
         secrets[key] = {
             object: object,
