@@ -60,17 +60,23 @@ function makeAccessor() {
     function register(object) {
         var key = makeUniqueKey();
         defProp(object, brand, { value: key });
-        secrets[key] = create(null);
     }
 
-    return function(object) {
+    function accessor(object) {
         if (!hasOwn.call(object, brand))
             register(object);
 
         var key = object[brand];
-        if (hasOwn.call(secrets, key))
-            return secrets[key];
+        return hasOwn.call(secrets, key)
+            ? secrets[key]
+            : secrets[key] = create(null);
+    }
+
+    accessor.forget = function(object) {
+        delete secrets[object[brand]];
     };
+
+    return accessor;
 }
 
 defProp(exports, "makeAccessor", {

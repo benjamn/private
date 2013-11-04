@@ -2,6 +2,7 @@ var assert = require("assert");
 var makeAccessor = require("../private").makeAccessor;
 var acc1 = makeAccessor();
 var obj = {};
+var hasOwn = obj.hasOwnProperty;
 
 acc1(obj).foo = 42;
 assert.deepEqual(obj, {});
@@ -31,6 +32,19 @@ assert.strictEqual(Object.getOwnPropertyNames(obj).length, 2);
 assert.strictEqual(Object.keys(obj).length, 0);
 acc2(obj).bar = "asdf";
 assert.deepEqual(acc2(obj), { bar: "asdf" });
+
+acc2.forget(obj);
+acc2(obj).bar = "asdf";
+var oldSecret = acc2(obj);
+assert.strictEqual(oldSecret.bar, "asdf");
+acc2.forget(obj);
+var newSecret = acc2(obj);
+assert.notStrictEqual(oldSecret, newSecret);
+assert.ok(hasOwn.call(oldSecret, "bar"));
+assert.ok(!hasOwn.call(newSecret, "bar"));
+newSecret.bar = "zxcv";
+assert.strictEqual(oldSecret.bar, "asdf");
+assert.strictEqual(acc2(obj).bar, "zxcv");
 
 var green = "\033[32m";
 var reset = "\033[0m";
