@@ -53,51 +53,61 @@ defProp(exports, "makeUniqueKey", {
     value: makeUniqueKey
 });
 
-function makeAccessor(requireAutoForget) {
-    var secrets = requireAutoForget ? null : create(null);
+function wrap(obj, value) {
+    var old = obj[value.name];
+    defProp(obj, value.name, { value: value });
+    return old;
+}
+
+// Object.getOwnPropertyNames is the only way to enumerate non-enumerable
+// properties, so if we wrap it to ignore our secret keys, there should be
+// no way (except guessing) to access those properties.
+var realGetOPNs = wrap(Object, function getOwnPropertyNames(object) {
+    for (var names = realGetOPNs(object),
+             src = 0,
+             dst = 0,
+             len = names.length;
+         src < len;
+         ++src) {
+        if (!hasOwn.call(uniqueKeys, names[src])) {
+            if (src > dst) {
+                names[dst] = names[src];
+            }
+            ++dst;
+        }
+    }
+    names.length = dst;
+    return names;
+});
+
+function makeAccessor() {
     var brand = makeUniqueKey();
+    var passkey = create(null);
 
     function register(object) {
-        var key = makeUniqueKey();
-        defProp(object, brand, { value: key });
+        var secret; // Created lazily.
+        defProp(object, brand, {
+            value: function(key, forget) {
+                // Only code that has access to the passkey can retrieve
+                // (or forget) the secret object.
+                if (key === passkey) {
+                    return forget
+                        ? secret = null
+                        : secret || (secret = create(null));
+                }
+            }
+        });
     }
 
     function accessor(object) {
-        assertSecrets();
-
         if (!hasOwn.call(object, brand))
             register(object);
-
-        var key = object[brand];
-        return secrets[key] || (secrets[key] = create(null));
-    }
-
-    function assertSecrets() {
-        if (!secrets) {
-            throw new Error(
-                "attempted to use accessor outside autoForget context"
-            );
-        }
+        return object[brand](passkey);
     }
 
     accessor.forget = function(object) {
-        assertSecrets();
-        var key = object[brand];
-        if (hasOwn.call(secrets, key)) {
-            delete secrets[key];
-        } else if (key in secrets) {
-            throw new Error(
-                "attempted to forget object owned by another " +
-                "autoForget context"
-            );
-        }
-    };
-
-    accessor.autoForget = function(callback, context) {
-        var keptSecrets = secrets;
-        secrets = create(keptSecrets);
-        try { return callback.call(context || null) }
-        finally { secrets = keptSecrets }
+        if (hasOwn.call(object, brand))
+            object[brand](passkey, true);
     };
 
     return accessor;
