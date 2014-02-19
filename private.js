@@ -53,8 +53,8 @@ defProp(exports, "makeUniqueKey", {
     value: makeUniqueKey
 });
 
-function makeAccessor() {
-    var secrets = {};
+function makeAccessor(requireAutoForget) {
+    var secrets = requireAutoForget ? null : create(null);
     var brand = makeUniqueKey();
 
     function register(object) {
@@ -63,17 +63,41 @@ function makeAccessor() {
     }
 
     function accessor(object) {
+        assertSecrets();
+
         if (!hasOwn.call(object, brand))
             register(object);
 
         var key = object[brand];
-        return hasOwn.call(secrets, key)
-            ? secrets[key]
-            : secrets[key] = create(null);
+        return secrets[key] || (secrets[key] = create(null));
+    }
+
+    function assertSecrets() {
+        if (!secrets) {
+            throw new Error(
+                "attempted to use accessor outside autoForget context"
+            );
+        }
     }
 
     accessor.forget = function(object) {
-        delete secrets[object[brand]];
+        assertSecrets();
+        var key = object[brand];
+        if (hasOwn.call(secrets, key)) {
+            delete secrets[key];
+        } else if (key in secrets) {
+            throw new Error(
+                "attempted to forget object owned by another " +
+                "autoForget context"
+            );
+        }
+    };
+
+    accessor.autoForget = function(callback, context) {
+        var keptSecrets = secrets;
+        secrets = create(keptSecrets);
+        try { return callback.call(context || null) }
+        finally { secrets = keptSecrets }
     };
 
     return accessor;
