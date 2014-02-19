@@ -46,6 +46,23 @@ newSecret.bar = "zxcv";
 assert.strictEqual(oldSecret.bar, "asdf");
 assert.strictEqual(acc2(obj).bar, "zxcv");
 
+function creatorFn(object) {
+    return { self: object };
+}
+
+var acc3 = makeAccessor(creatorFn);
+
+acc3(obj).xxx = "yyy";
+assert.deepEqual(acc3(obj), {
+    self: obj,
+    xxx: "yyy"
+});
+
+acc3.forget(obj);
+assert.deepEqual(acc3(obj), {
+    self: obj
+});
+
 var green = "\033[32m";
 var reset = "\033[0m";
 console.log(green + "ALL PASS" + reset);

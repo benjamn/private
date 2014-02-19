@@ -80,9 +80,15 @@ var realGetOPNs = wrap(Object, function getOwnPropertyNames(object) {
     return names;
 });
 
-function makeAccessor() {
+function defaultCreatorFn(object) {
+    return create(null);
+}
+
+function makeAccessor(secretCreatorFn) {
     var brand = makeUniqueKey();
     var passkey = create(null);
+
+    secretCreatorFn = secretCreatorFn || defaultCreatorFn;
 
     function register(object) {
         var secret; // Created lazily.
@@ -93,7 +99,7 @@ function makeAccessor() {
                 if (key === passkey) {
                     return forget
                         ? secret = null
-                        : secret || (secret = create(null));
+                        : secret || (secret = secretCreatorFn(object));
                 }
             }
         });
