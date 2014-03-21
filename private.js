@@ -92,17 +92,18 @@ function makeAccessor(secretCreatorFn) {
 
   function register(object) {
     var secret; // Created lazily.
-    defProp(object, brand, {
-      value: function(key, forget) {
-        // Only code that has access to the passkey can retrieve
-        // (or forget) the secret object.
-        if (key === passkey) {
-          return forget
-            ? secret = null
-            : secret || (secret = secretCreatorFn(object));
-        }
+
+    function vault(key, forget) {
+      // Only code that has access to the passkey can retrieve (or forget)
+      // the secret object.
+      if (key === passkey) {
+        return forget
+          ? secret = null
+          : secret || (secret = secretCreatorFn(object));
       }
-    });
+    }
+
+    defProp(object, brand, { value: vault });
   }
 
   function accessor(object) {
