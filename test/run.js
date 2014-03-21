@@ -18,10 +18,10 @@ delete acc1(obj).foo;
 assert.deepEqual(acc1(obj), { bar: "baz" });
 
 try {
-    acc1(42);
-    throw new Error("threw wrong error");
+  acc1(42);
+  throw new Error("threw wrong error");
 } catch (err) {
-    assert.ok(err);
+  assert.ok(err);
 }
 
 var acc2 = makeAccessor();
@@ -47,20 +47,20 @@ assert.strictEqual(oldSecret.bar, "asdf");
 assert.strictEqual(acc2(obj).bar, "zxcv");
 
 function creatorFn(object) {
-    return { self: object };
+  return { self: object };
 }
 
 var acc3 = makeAccessor(creatorFn);
 
 acc3(obj).xxx = "yyy";
 assert.deepEqual(acc3(obj), {
-    self: obj,
-    xxx: "yyy"
+  self: obj,
+  xxx: "yyy"
 });
 
 acc3.forget(obj);
 assert.deepEqual(acc3(obj), {
-    self: obj
+  self: obj
 });
 
 var green = "\033[32m";
