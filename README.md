@@ -17,7 +17,53 @@ From GitHub:
     cd private
     npm install .
 
-Introduction
+Usage
+---
+**Get or create a secret object associated with any (non-frozen) object:**
+```js
+var getSecret = require("private").makeAccessor();
+var obj = Object.create(null); // any kind of object works
+getSecret(obj).totallySafeProperty = "p455w0rd";
+
+console.log(Object.keys(obj)); // []
+console.log(Object.getOwnPropertyNames(obj)); // []
+console.log(getSecret(obj)); // { totallySafeProperty: "p455w0rd" }
+```
+Now, only code that has a reference to both `getSecret` and `obj` can possibly access `.totallySafeProperty`.
+
+*Importantly, no global references to the secret object are retained by the `private` package, so as soon as `obj` gets garbage collected, the secret will be reclaimed as well. In other words, you don't have to worry about memory leaks.*
+
+**Create a unique property name that cannot be enumerated or guessed:**
+```js
+var secretKey = require("private").makeUniqueKey();
+var obj = Object.create(null); // any kind of object works
+
+Object.defineProperty(obj, secretKey, {
+  value: { totallySafeProperty: "p455w0rd" },
+  enumerable: false // optional; non-enumerability is the default
+});
+
+Object.defineProperty(obj, "nonEnumerableProperty", {
+  value: "anyone can guess my name",
+  enumerable: false
+});
+
+console.log(obj[secretKey].totallySafeProperty); // p455w0rd
+console.log(obj.nonEnumerableProperty); // "anyone can guess my name"
+console.log(Object.keys(obj)); // []
+console.log(Object.getOwnPropertyNames(obj)); // ["nonEnumerableProperty"]
+
+for (var key in obj) {
+  console.log(key); // never called
+}
+```
+Because these keys are non-enumerable, you can't discover them using a `for`-`in` loop. Because `secretKey` is a long string of random characters, you would have a lot of trouble guessing it. And because the `private` module wraps `Object.getOwnPropertyNames` to exclude the keys it generates, you can't even use that interface to discover it.
+
+Unless you have access to the value of the `secretKey` property name, there is no way to access the value associated with it. So your only responsibility as secret-keeper is to avoid handing out the value of `secretKey` to untrusted code.
+
+Think of this style as a home-grown version of the first style. Note, however, that it requires a full implementation of ES5's `Object.defineProperty` method in order to make any safety guarantees, whereas the first example will provide safety even in environments that do not support `Object.defineProperty`.
+
+Rationale
 ---
 
 In JavaScript, the only data that are truly private are local variables
