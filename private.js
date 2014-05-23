@@ -63,17 +63,12 @@ function makeUniqueKey() {
 // for the typical use of this module.
 defProp(exports, "makeUniqueKey", makeUniqueKey);
 
-function wrap(obj, value) {
-  var old = obj[value.name];
-  defProp(obj, value.name, value);
-  return old;
-}
-
 // Object.getOwnPropertyNames is the only way to enumerate non-enumerable
 // properties, so if we wrap it to ignore our secret keys, there should be
 // no way (except guessing) to access those properties.
-var realGetOPNs = wrap(Object, function getOwnPropertyNames(object) {
-  for (var names = realGetOPNs(object),
+var originalGetOPNs = Object.getOwnPropertyNames;
+Object.getOwnPropertyNames = function getOwnPropertyNames(object) {
+  for (var names = originalGetOPNs(object),
            src = 0,
            dst = 0,
            len = names.length;
@@ -88,7 +83,7 @@ var realGetOPNs = wrap(Object, function getOwnPropertyNames(object) {
   }
   names.length = dst;
   return names;
-});
+};
 
 function defaultCreatorFn(object) {
   return create(null);
