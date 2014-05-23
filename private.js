@@ -6,12 +6,7 @@ var originalCreate = Object.create;
 
 function defProp(obj, name, value) {
   if (originalDefProp) try {
-    originalDefProp.call(originalObject, obj, name, {
-      value: value,
-      writable: false,
-      enumerable: false,
-      configurable: false
-    });
+    originalDefProp.call(originalObject, obj, name, { value: value });
   } catch (definePropertyIsBrokenInIE8) {
     obj[name] = value;
   } else {
