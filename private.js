@@ -1,10 +1,23 @@
 "use strict";
 
-var defProp = Object.defineProperty || function(obj, name, desc) {
-  // Normal property assignment is the best we can do if
-  // Object.defineProperty is not available.
-  obj[name] = desc.value;
-};
+var originalObject = Object;
+var originalDefProp = Object.defineProperty;
+var originalCreate = Object.create;
+
+function defProp(obj, name, value) {
+  if (originalDefProp) try {
+    originalDefProp.call(originalObject, obj, name, {
+      value: value,
+      writable: false,
+      enumerable: false,
+      configurable: false
+    });
+  } catch (definePropertyIsBrokenInIE8) {
+    obj[name] = value;
+  } else {
+    obj[name] = value;
+  }
+}
 
 // For functions that will be invoked using .call or .apply, we need to
 // define those methods on the function objects themselves, rather than
@@ -12,29 +25,28 @@ var defProp = Object.defineProperty || function(obj, name, desc) {
 // third party cannot interfere with the functionality of this module by
 // redefining Function.prototype.call or .apply.
 function makeSafeToCall(fun) {
-  defProp(fun, "call", { value: fun.call });
-  defProp(fun, "apply", { value: fun.apply });
+  if (fun) {
+    defProp(fun, "call", fun.call);
+    defProp(fun, "apply", fun.apply);
+  }
   return fun;
 }
+
+makeSafeToCall(originalDefProp);
+makeSafeToCall(originalCreate);
 
 var hasOwn = makeSafeToCall(Object.prototype.hasOwnProperty);
 var numToStr = makeSafeToCall(Number.prototype.toString);
 var strSlice = makeSafeToCall(String.prototype.slice);
 
 var cloner = function(){};
-var create = Object.create || function(prototype, properties) {
+function create(prototype) {
+  if (originalCreate) {
+    return originalCreate.call(originalObject, prototype);
+  }
   cloner.prototype = prototype || null;
-  var obj = new cloner;
-
-  // The properties parameter is unused by this module, but I want this
-  // shim to be as complete as possible.
-  if (properties)
-    for (var name in properties)
-      if (hasOwn.call(properties, name))
-        defProp(obj, name, properties[name]);
-
-  return obj;
-};
+  return new cloner;
+}
 
 var rand = Math.random;
 var uniqueKeys = create(null);
@@ -49,13 +61,11 @@ function makeUniqueKey() {
 
 // External users might find this function useful, but it is not necessary
 // for the typical use of this module.
-defProp(exports, "makeUniqueKey", {
-  value: makeUniqueKey
-});
+defProp(exports, "makeUniqueKey", makeUniqueKey);
 
 function wrap(obj, value) {
   var old = obj[value.name];
-  defProp(obj, value.name, { value: value });
+  defProp(obj, value.name, value);
   return old;
 }
 
@@ -103,7 +113,7 @@ function makeAccessor(secretCreatorFn) {
       }
     }
 
-    defProp(object, brand, { value: vault });
+    defProp(object, brand, vault);
   }
 
   function accessor(object) {
@@ -120,6 +130,4 @@ function makeAccessor(secretCreatorFn) {
   return accessor;
 }
 
-defProp(exports, "makeAccessor", {
-  value: makeAccessor
-});
+defProp(exports, "makeAccessor", makeAccessor);
