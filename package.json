@@ -24,6 +24,9 @@
   },
   "license": "MIT",
   "main": "private.js",
+  "files": [
+    "private.js"
+  ],
   "scripts": {
     "test": "node test/run.js"
   },
