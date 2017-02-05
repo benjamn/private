@@ -28,9 +28,12 @@
     "private.js"
   ],
   "scripts": {
-    "test": "node test/run.js"
+    "test": "mocha --reporter spec --full-trace test/run.js"
   },
   "engines": {
     "node": ">= 0.6"
+  },
+  "devDependencies": {
+    "mocha": "^3.2.0"
   }
 }
