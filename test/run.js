@@ -63,6 +63,6 @@ assert.deepEqual(acc3(obj), {
   self: obj
 });
 
-var green = "\033[32m";
-var reset = "\033[0m";
+var green = "\x1b[32m";
+var reset = "\x1b[0m";
 console.log(green + "ALL PASS" + reset);
